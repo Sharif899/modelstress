@@ -61,7 +61,7 @@ User analyzes output in real time
 
 ### Run Locally
 
-git clone [https://github.com/shaarif899E/modelstress.git](https://github.com/sharif899/modelstress.git)
+git clone [https://github.com/sharif899/modelstress.git](https://github.com/sharif899/modelstress.git)
 cd modelstress
 npm install
 npm start
