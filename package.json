@@ -1,0 +1,9 @@
+{
+  "name": "og-model-stress-tester",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "OpenGradient Model Stress Tester — Generate 100 inputs, run batch inference, get full output distribution report with on-chain proof",
+  "dependencies": {
+    "ethers": "^6.9.0"
+  }
+}

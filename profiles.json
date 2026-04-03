@@ -1,0 +1,136 @@
+{
+  "profiles": {
+    "defi_risk": {
+      "name": "DeFi Risk Model",
+      "description": "For models that take DeFi position or protocol risk features",
+      "features": [
+        { "name": "collateral_ratio",    "min": 0.5,  "max": 5.0,   "distribution": "uniform" },
+        { "name": "borrowed_ratio",      "min": 0.0,  "max": 1.0,   "distribution": "uniform" },
+        { "name": "asset_volatility",    "min": 0.0,  "max": 0.8,   "distribution": "uniform" },
+        { "name": "health_factor",       "min": 0.3,  "max": 4.0,   "distribution": "uniform" },
+        { "name": "days_since_deposit",  "min": 0.0,  "max": 730.0, "distribution": "uniform" }
+      ],
+      "edgeCases": [
+        [0.5, 0.99, 0.8, 0.5, 1.0],
+        [5.0, 0.01, 0.01, 4.0, 730.0],
+        [1.0, 1.0, 0.5, 1.0, 30.0],
+        [0.5, 0.5, 0.5, 0.5, 0.0]
+      ]
+    },
+    "wallet_security": {
+      "name": "Wallet / Security Model",
+      "description": "For models that take wallet behaviour and on-chain security features",
+      "features": [
+        { "name": "tx_count_24h",       "min": 0.0,   "max": 200.0,  "distribution": "uniform" },
+        { "name": "unique_contracts",   "min": 0.0,   "max": 100.0,  "distribution": "uniform" },
+        { "name": "avg_tx_value_eth",   "min": 0.0,   "max": 100.0,  "distribution": "log" },
+        { "name": "wallet_age_days",    "min": 0.0,   "max": 2000.0, "distribution": "uniform" },
+        { "name": "failed_tx_ratio",    "min": 0.0,   "max": 1.0,    "distribution": "uniform" },
+        { "name": "night_tx_ratio",     "min": 0.0,   "max": 1.0,    "distribution": "uniform" }
+      ],
+      "edgeCases": [
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [200.0, 100.0, 100.0, 2000.0, 1.0, 1.0],
+        [100.0, 50.0, 0.001, 1.0, 0.9, 0.8],
+        [1.0, 1.0, 50.0, 1000.0, 0.0, 0.0]
+      ]
+    },
+    "trading_signal": {
+      "name": "Trading Signal Model",
+      "description": "For models that take price action and market indicators",
+      "features": [
+        { "name": "price_change_1h",   "min": -0.2,  "max": 0.2,   "distribution": "normal" },
+        { "name": "volume_change_1h",  "min": -0.5,  "max": 3.0,   "distribution": "uniform" },
+        { "name": "rsi",               "min": 10.0,  "max": 90.0,  "distribution": "uniform" },
+        { "name": "macd_signal",       "min": -2.0,  "max": 2.0,   "distribution": "normal" },
+        { "name": "market_cap_rank",   "min": 1.0,   "max": 500.0, "distribution": "uniform" }
+      ],
+      "edgeCases": [
+        [-0.2, -0.5, 10.0, -2.0, 500.0],
+        [0.2,   3.0, 90.0,  2.0,   1.0],
+        [0.0,   1.0, 50.0,  0.0, 250.0],
+        [-0.15, 2.5,  15.0, -1.5, 100.0]
+      ]
+    },
+    "credit_score": {
+      "name": "Credit Score Model",
+      "description": "For models that predict creditworthiness from financial behaviour",
+      "features": [
+        { "name": "payment_history",      "min": 0.0, "max": 1.0,  "distribution": "uniform" },
+        { "name": "credit_utilization",   "min": 0.0, "max": 1.0,  "distribution": "uniform" },
+        { "name": "account_age_years",    "min": 0.0, "max": 30.0, "distribution": "uniform" },
+        { "name": "num_accounts",         "min": 1.0, "max": 20.0, "distribution": "uniform" },
+        { "name": "recent_inquiries",     "min": 0.0, "max": 10.0, "distribution": "uniform" }
+      ],
+      "edgeCases": [
+        [0.0, 1.0, 0.0, 1.0, 10.0],
+        [1.0, 0.0, 30.0, 20.0, 0.0],
+        [0.5, 0.5, 5.0, 5.0, 3.0],
+        [0.99, 0.01, 25.0, 15.0, 0.0]
+      ]
+    },
+    "nft_analysis": {
+      "name": "NFT Analysis Model",
+      "description": "For models that analyse NFT trading patterns and wash trading",
+      "features": [
+        { "name": "self_trade_ratio",       "min": 0.0, "max": 1.0,   "distribution": "uniform" },
+        { "name": "price_round_trip",       "min": 0.0, "max": 1.0,   "distribution": "uniform" },
+        { "name": "trade_interval_std",     "min": 0.0, "max": 1.0,   "distribution": "uniform" },
+        { "name": "unique_buyers_ratio",    "min": 0.0, "max": 1.0,   "distribution": "uniform" },
+        { "name": "wallet_age_days",        "min": 0.0, "max": 2000.0,"distribution": "uniform" },
+        { "name": "avg_hold_duration_hrs",  "min": 0.0, "max": 8760.0,"distribution": "uniform" },
+        { "name": "royalty_avoid_ratio",    "min": 0.0, "max": 1.0,   "distribution": "uniform" }
+      ],
+      "edgeCases": [
+        [1.0, 1.0, 0.0, 0.0, 1.0, 0.5, 1.0],
+        [0.0, 0.0, 1.0, 1.0, 2000.0, 8760.0, 0.0],
+        [0.5, 0.5, 0.5, 0.5, 100.0, 100.0, 0.5],
+        [0.9, 0.8, 0.1, 0.1, 10.0, 2.0, 0.8]
+      ]
+    },
+    "generic_5": {
+      "name": "Generic 5-Feature Model",
+      "description": "Universal profile for any 5-input model. Features normalised 0–1.",
+      "features": [
+        { "name": "feature_1", "min": 0.0, "max": 1.0, "distribution": "uniform" },
+        { "name": "feature_2", "min": 0.0, "max": 1.0, "distribution": "uniform" },
+        { "name": "feature_3", "min": 0.0, "max": 1.0, "distribution": "uniform" },
+        { "name": "feature_4", "min": 0.0, "max": 1.0, "distribution": "uniform" },
+        { "name": "feature_5", "min": 0.0, "max": 1.0, "distribution": "uniform" }
+      ],
+      "edgeCases": [
+        [0.0, 0.0, 0.0, 0.0, 0.0],
+        [1.0, 1.0, 1.0, 1.0, 1.0],
+        [0.5, 0.5, 0.5, 0.5, 0.5],
+        [0.1, 0.9, 0.1, 0.9, 0.1]
+      ]
+    },
+    "generic_7": {
+      "name": "Generic 7-Feature Model",
+      "description": "Universal profile for any 7-input model.",
+      "features": [
+        { "name": "feature_1", "min": 0.0, "max": 1.0, "distribution": "uniform" },
+        { "name": "feature_2", "min": 0.0, "max": 1.0, "distribution": "uniform" },
+        { "name": "feature_3", "min": 0.0, "max": 1.0, "distribution": "uniform" },
+        { "name": "feature_4", "min": 0.0, "max": 1.0, "distribution": "uniform" },
+        { "name": "feature_5", "min": 0.0, "max": 1.0, "distribution": "uniform" },
+        { "name": "feature_6", "min": 0.0, "max": 1.0, "distribution": "uniform" },
+        { "name": "feature_7", "min": 0.0, "max": 1.0, "distribution": "uniform" }
+      ],
+      "edgeCases": [
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+        [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+        [0.1, 0.9, 0.1, 0.9, 0.1, 0.9, 0.1]
+      ]
+    }
+  },
+  "settings": {
+    "totalSamples": 100,
+    "edgeCaseCount": 4,
+    "randomSamples": 96,
+    "ogNetwork": "https://ogevmdevnet.opengradient.ai",
+    "ogExplorer": "https://explorer.opengradient.ai",
+    "ogModel": "anthropic/claude-sonnet-4-5"
+  }
+}

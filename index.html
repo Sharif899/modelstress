@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OG Stress Tester — OpenGradient Model Quality Analyser</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700;800&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f5f0;--surface:#ffffff;--card:#fdfcfa;--panel:#f2efe9;
+  --border:#e5e0d8;--border2:#ccc8be;--border3:#aaa59a;
+  --text:#1c1a16;--muted:#8a8478;--dim:#ece9e3;
+  --og:#1c1a16;
+  --green:#00875a;--green-bg:#e6f7f2;--green-border:#a3dfc9;
+  --red:#c0392b;--red-bg:#fdf0ee;--red-border:#f0b8b3;
+  --amber:#b45309;--amber-bg:#fef9ee;--amber-border:#fad99a;
+  --blue:#1d4ed8;--blue-bg:#eff6ff;--blue-border:#bfdbfe;
+  --purple:#6d28d9;--purple-bg:#f5f3ff;--purple-border:#ddd6fe;
+  --mono:'Fira Code',monospace;--sans:'Bricolage Grotesque',sans-serif;
+}
+html{min-height:100%;background:var(--bg)}
+body{font-family:var(--sans);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
+
+/* ── Header ── */
+header{
+  background:var(--og);color:#fff;
+  height:56px;display:flex;align-items:center;padding:0 28px;
+  justify-content:space-between;position:sticky;top:0;z-index:50;
+}
+.h-left{display:flex;align-items:center;gap:12px}
+.h-logo{width:30px;height:30px;background:#fff;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--og);font-weight:700}
+.h-title{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.h-sep{opacity:.3;margin:0 6px}
+.h-sub{font-family:var(--mono);font-size:9px;opacity:.5;letter-spacing:1px;text-transform:uppercase}
+.h-right{display:flex;align-items:center;gap:10px}
+.h-link{font-family:var(--mono);font-size:9px;opacity:.5;text-decoration:none;color:#fff;letter-spacing:.5px;transition:opacity .15s}
+.h-link:hover{opacity:.9}
+
+/* ── Page ── */
+.page{max-width:1100px;margin:0 auto;padding:36px 24px 100px}
+
+/* ── Config panel ── */
+.config-card{background:var(--surface);border:1px solid var(--border);padding:28px;margin-bottom:28px}
+.cc-title{font-size:20px;font-weight:700;letter-spacing:-.4px;margin-bottom:6px}
+.cc-sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6;max-width:600px}
+
+.config-grid{display:grid;grid-template-columns:1fr 1fr 200px;gap:14px;align-items:end}
+@media(max-width:768px){.config-grid{grid-template-columns:1fr}}
+
+.field{display:flex;flex-direction:column;gap:6px}
+.field-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.field-input{font-family:var(--mono);font-size:13px;background:var(--panel);color:var(--text);border:1.5px solid var(--border2);padding:11px 14px;outline:none;transition:border-color .2s}
+.field-input:focus{border-color:var(--og)}
+.field-input::placeholder{color:var(--muted)}
+.field-select{font-family:var(--mono);font-size:12px;background:var(--panel);color:var(--text);border:1.5px solid var(--border2);padding:11px 14px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;transition:border-color .2s}
+.field-select:focus{border-color:var(--og)}
+
+.run-btn{
+  font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;padding:12px 0;background:var(--og);color:#fff;
+  border:none;cursor:pointer;transition:opacity .15s;width:100%;
+}
+.run-btn:hover{opacity:.85}
+.run-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* Quick model chips */
+.quick-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.qc-label{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.qc-chip{font-family:var(--mono);font-size:9px;padding:4px 10px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .12s;letter-spacing:.3px}
+.qc-chip:hover{border-color:var(--og);color:var(--og);background:rgba(28,26,22,.04)}
+
+/* Custom ranges */
+.custom-ranges{margin-top:16px;display:none}
+.custom-ranges.visible{display:block}
+.cr-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.cr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.cr-item{background:var(--panel);border:1px solid var(--border);padding:10px 12px}
+.cr-name{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:.5px}
+.cr-inputs{display:flex;gap:6px}
+.cr-mini-input{flex:1;font-family:var(--mono);font-size:11px;background:var(--surface);border:1px solid var(--border2);padding:5px 8px;outline:none;color:var(--text)}
+.cr-mini-input:focus{border-color:var(--og)}
+
+/* ── Progress ── */
+.progress-section{display:none;margin-bottom:20px}
+.progress-section.visible{display:block}
+.ps-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ps-title{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.ps-count{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--og)}
+.progress-track{height:6px;background:var(--dim);overflow:hidden}
+.progress-fill{height:100%;background:var(--og);transition:width .3s;width:0%}
+.ps-steps{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.ps-step{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:7px;padding:3px 0}
+.ps-step.active{color:var(--og)}
+.ps-step.done{color:var(--green)}
+.pss-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.pss-spin{width:10px;height:10px;border:1.5px solid var(--border2);border-top-color:var(--og);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Results ── */
+.results-section{display:none;animation:rIn .4s ease}
+.results-section.visible{display:block}
+@keyframes rIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Verdict card */
+.verdict-card{
+  background:var(--og);color:#fff;padding:22px 26px;
+  margin-bottom:20px;display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;
+}
+.vc-left{flex:1}
+.vc-eyebrow{font-family:var(--mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;opacity:.5;margin-bottom:8px}
+.vc-text{font-size:14px;line-height:1.7;font-weight:400;max-width:680px}
+.vc-right{flex-shrink:0;text-align:right}
+.vc-proof{font-family:var(--mono);font-size:8px;opacity:.5;margin-bottom:4px}
+.vc-hash{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.7);text-decoration:none;transition:opacity .15s}
+.vc-hash:hover{opacity:.9}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:20px}
+@media(max-width:600px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-cell{background:var(--surface);padding:14px 16px}
+.sc-label{font-family:var(--mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.sc-value{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-1px;line-height:1}
+.sc-value.good{color:var(--green)} .sc-value.warn{color:var(--amber)} .sc-value.bad{color:var(--red)} .sc-value.og{color:var(--og)}
+.sc-sub{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* Two column layout */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:700px){.two-col{grid-template-columns:1fr}}
+
+/* Section card */
+.section-card{background:var(--surface);border:1px solid var(--border);overflow:hidden}
+.sc-header{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--panel);display:flex;align-items:center;justify-content:space-between}
+.sch-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.sch-badge{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:2px}
+.sc-body{padding:16px}
+
+/* Histogram */
+.histogram{display:flex;align-items:flex-end;gap:3px;height:120px;padding:0 4px}
+.hist-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.hist-bar{width:100%;background:var(--og);border-radius:2px 2px 0 0;transition:height .6s cubic-bezier(.16,1,.3,1);min-height:2px}
+.hist-bar:hover{opacity:.75}
+.hist-label{font-family:var(--mono);font-size:6px;color:var(--muted);text-align:center;overflow:hidden;white-space:nowrap}
+.hist-axis{display:flex;justify-content:space-between;padding:4px 4px 0;font-family:var(--mono);font-size:8px;color:var(--muted)}
+
+/* Percentile table */
+.percentile-table{width:100%;border-collapse:collapse}
+.percentile-table th{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border);text-align:left;background:var(--panel)}
+.percentile-table td{font-family:var(--mono);font-size:11px;padding:7px 10px;border-bottom:1px solid var(--border)}
+.percentile-table tr:last-child td{border-bottom:none}
+
+/* Samples table */
+.samples-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px}
+.samples-table th{padding:6px 10px;border-bottom:1px solid var(--border);text-align:left;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);background:var(--panel)}
+.samples-table td{padding:6px 10px;border-bottom:1px solid var(--border);font-size:10px}
+.samples-table tr:last-child td{border-bottom:none}
+.samples-table tr.edge-case{background:var(--amber-bg)}
+.edge-badge{font-size:7px;background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);padding:1px 5px;border-radius:2px;letter-spacing:.5px;margin-left:4px}
+.output-cell.high{color:var(--green);font-weight:700}
+.output-cell.mid{color:var(--og)}
+.output-cell.low{color:var(--red);font-weight:700}
+
+/* Quality badge */
+.quality-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:2px;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.5px}
+.quality-badge.excellent{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.quality-badge.good{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.quality-badge.fair{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.quality-badge.poor{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+
+/* Download btn */
+.download-btn{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 18px;background:var(--og);color:#fff;border:none;cursor:pointer;transition:opacity .15s;margin-top:16px}
+.download-btn:hover{opacity:.85}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <div class="h-logo">OG</div>
+    <span class="h-title">Stress Tester</span>
+    <span class="h-sep">/</span>
+    <span class="h-sub">Model Quality Analyser</span>
+  </div>
+  <div class="h-right">
+    <a class="h-link" href="https://hub.opengradient.ai" target="_blank">HUB ↗</a>
+    <a class="h-link" href="https://explorer.opengradient.ai" target="_blank">EXPLORER ↗</a>
+    <a class="h-link" href="https://docs.opengradient.ai" target="_blank">DOCS ↗</a>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- Config -->
+  <div class="config-card">
+    <div class="cc-title">OpenGradient Model Stress Tester</div>
+    <div class="cc-sub">
+      Paste any model CID from the OpenGradient Hub. The tester generates 100 input vectors —
+      96 random samples across the full input range plus 4 designed edge cases — runs them all,
+      and returns a full statistical analysis of your model's output distribution with a
+      TEE-verified AI verdict.
+    </div>
+
+    <div class="config-grid">
+      <div class="field">
+        <label class="field-label">Model CID (from Hub)</label>
+        <input class="field-input" id="modelCid"
+          value="QmRhcpDXfYCKsimTmJYrAVM4Bbvck59Zb2onj3MHv9Kw5N"
+          placeholder="Qm... or Walrus Blob ID"
+          autocomplete="off" spellcheck="false"/>
+      </div>
+      <div class="field">
+        <label class="field-label">Input Profile</label>
+        <select class="field-select" id="profileSelect" onchange="onProfileChange()">
+          <option value="trading_signal">Trading Signal (5 features)</option>
+          <option value="defi_risk">DeFi Risk (5 features)</option>
+          <option value="credit_score">Credit Score (5 features)</option>
+          <option value="wallet_security">Wallet Security (6 features)</option>
+          <option value="nft_analysis">NFT Analysis (7 features)</option>
+          <option value="generic_5">Generic 5-Feature</option>
+          <option value="generic_7">Generic 7-Feature</option>
+          <option value="custom">Custom Ranges</option>
+        </select>
+      </div>
+      <button class="run-btn" id="runBtn" onclick="runStressTest()">
+        ⚡ RUN STRESS TEST
+      </button>
+    </div>
+
+    <!-- Quick model chips -->
+    <div class="quick-chips">
+      <span class="qc-label">Quick load:</span>
+      <div class="qc-chip" onclick="loadModel('eth-vol')">ETH Volatility</div>
+      <div class="qc-chip" onclick="loadModel('liquidation')">DeFi Liquidation</div>
+      <div class="qc-chip" onclick="loadModel('credit')">Credit Score</div>
+      <div class="qc-chip" onclick="loadModel('fraud')">Wallet Fraud</div>
+      <div class="qc-chip" onclick="loadModel('token-dir')">Token Direction</div>
+    </div>
+
+    <!-- Custom ranges -->
+    <div class="custom-ranges" id="customRanges">
+      <div class="cr-title">// Custom Input Ranges</div>
+      <div class="cr-grid" id="customRangeGrid"></div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section" id="progressSection">
+    <div class="ps-header">
+      <span class="ps-title">Running stress test</span>
+      <span class="ps-count" id="psCount">0 / 100</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="ps-steps">
+      <div class="ps-step" id="step-gen"><div class="pss-dot"></div>Generating 100 input vectors</div>
+      <div class="ps-step" id="step-run"><div class="pss-dot"></div>Running batch inference on OpenGradient</div>
+      <div class="ps-step" id="step-stats"><div class="pss-dot"></div>Computing output statistics</div>
+      <div class="ps-step" id="step-verdict"><div class="pss-dot"></div>Getting TEE-verified AI verdict</div>
+      <div class="ps-step" id="step-proof"><div class="pss-dot"></div>Settling proof on OpenGradient Network</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-section" id="resultsSection">
+
+    <!-- Verdict -->
+    <div class="verdict-card" id="verdictCard">
+      <div class="vc-left">
+        <div class="vc-eyebrow">// TEE-Verified AI Verdict · OpenGradient Network</div>
+        <div class="vc-text" id="verdictText">Verdict loading...</div>
+      </div>
+      <div class="vc-right">
+        <div class="vc-proof">ON-CHAIN PROOF</div>
+        <a class="vc-hash" id="verdictHash" href="#" target="_blank">—</a>
+      </div>
+    </div>
+
+    <!-- Stats grid -->
+    <div class="stats-grid">
+      <div class="stat-cell">
+        <div class="sc-label">// Samples Run</div>
+        <div class="sc-value og" id="statCount">—</div>
+        <div class="sc-sub">+ edge cases</div>
+      </div>
+      <div class="stat-cell">
+        <div class="sc-label">// Failure Rate</div>
+        <div class="sc-value" id="statFailure">—</div>
+        <div class="sc-sub" id="statFailureSub">inference errors</div>
+      </div>
+      <div class="stat-cell">
+        <div class="sc-label">// Output Range</div>
+        <div class="sc-value og" id="statRange">—</div>
+        <div class="sc-sub" id="statRangeSub">min → max</div>
+      </div>
+      <div class="stat-cell">
+        <div class="sc-label">// Consistency</div>
+        <div class="sc-value" id="statConsistency">—</div>
+        <div class="sc-sub">/ 100</div>
+      </div>
+    </div>
+
+    <!-- Histogram + Quality -->
+    <div class="two-col">
+      <div class="section-card">
+        <div class="sc-header">
+          <span class="sch-title">// Output Distribution Histogram</span>
+          <span class="sch-badge" id="distShape" style="color:var(--muted)">—</span>
+        </div>
+        <div class="sc-body">
+          <div class="histogram" id="histogram"></div>
+          <div class="hist-axis">
+            <span id="histMin">—</span>
+            <span id="histMid">—</span>
+            <span id="histMax">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="sc-header"><span class="sch-title">// Percentile Distribution</span></div>
+        <div class="sc-body" style="padding:0">
+          <table class="percentile-table">
+            <tr><th>Percentile</th><th>Value</th><th>Interpretation</th></tr>
+            <tr><td>P5</td><td id="p5">—</td><td style="color:var(--muted);font-size:9px">Extreme low outputs</td></tr>
+            <tr><td>P25</td><td id="p25">—</td><td style="color:var(--muted);font-size:9px">Lower quartile</td></tr>
+            <tr><td>P50 (Median)</td><td id="p50">—</td><td style="color:var(--muted);font-size:9px">Middle value</td></tr>
+            <tr><td>P75</td><td id="p75">—</td><td style="color:var(--muted);font-size:9px">Upper quartile</td></tr>
+            <tr><td>P95</td><td id="p95">—</td><td style="color:var(--muted);font-size:9px">Extreme high outputs</td></tr>
+            <tr><td>Mean</td><td id="pMean">—</td><td style="color:var(--muted);font-size:9px">Average output</td></tr>
+            <tr><td>Std Dev</td><td id="pStd">—</td><td style="color:var(--muted);font-size:9px">Output spread</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edge case + quality -->
+    <div class="two-col">
+      <div class="section-card">
+        <div class="sc-header">
+          <span class="sch-title">// Model Quality Assessment</span>
+        </div>
+        <div class="sc-body">
+          <div id="qualityBadge" style="margin-bottom:14px"></div>
+          <table class="percentile-table" style="margin-top:8px">
+            <tr><th>Metric</th><th>Value</th></tr>
+            <tr><td>Edge Case Sensitivity</td><td id="qEdge">—</td></tr>
+            <tr><td>Edge Case Mean Output</td><td id="qEdgeMean">—</td></tr>
+            <tr><td>Random Sample Mean</td><td id="qRandMean">—</td></tr>
+            <tr><td>Distribution Shape</td><td id="qShape">—</td></tr>
+            <tr><td>Output Stability</td><td id="qStability">—</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="sc-header">
+          <span class="sch-title">// Sample Inputs &amp; Outputs</span>
+          <span class="sch-badge" style="color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber-border)">🟡 = edge case</span>
+        </div>
+        <div class="sc-body" style="padding:0;overflow-x:auto">
+          <table class="samples-table" id="samplesTable">
+            <thead><tr><th>#</th><th>Type</th><th>First 3 Inputs</th><th>Output</th></tr></thead>
+            <tbody id="samplesBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Download -->
+    <button class="download-btn" onclick="downloadReport()">↓ Download Full Report (.txt)</button>
+
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let lastResult = null;
+
+// ── Quick model loader ────────────────────────────────────────
+const QUICK_MODELS = {
+  "eth-vol":    { cid: "QmRhcpDXfYCKsimTmJYrAVM4Bbvck59Zb2onj3MHv9Kw5N", profile: "trading_signal" },
+  "liquidation":{ cid: "defi_liquidation_risk",   profile: "defi_risk" },
+  "credit":     { cid: "credit_score_predictor",   profile: "credit_score" },
+  "fraud":      { cid: "wallet_fraud_detector",    profile: "wallet_security" },
+  "token-dir":  { cid: "token_price_direction",    profile: "trading_signal" },
+};
+
+function loadModel(key) {
+  const m = QUICK_MODELS[key];
+  document.getElementById("modelCid").value = m.cid;
+  document.getElementById("profileSelect").value = m.profile;
+  onProfileChange();
+}
+
+// ── Profile change ────────────────────────────────────────────
+function onProfileChange() {
+  const profile = document.getElementById("profileSelect").value;
+  const cr = document.getElementById("customRanges");
+  if (profile === "custom") {
+    cr.classList.add("visible");
+    buildCustomRanges(5);
+  } else {
+    cr.classList.remove("visible");
+  }
+}
+
+function buildCustomRanges(n) {
+  const grid = document.getElementById("customRangeGrid");
+  grid.innerHTML = Array(n).fill(0).map((_,i) => `
+    <div class="cr-item">
+      <div class="cr-name">Feature ${i+1}</div>
+      <div class="cr-inputs">
+        <input class="cr-mini-input" placeholder="Min" id="cr-min-${i}" value="0">
+        <input class="cr-mini-input" placeholder="Max" id="cr-max-${i}" value="1">
+      </div>
+    </div>
+  `).join("");
+}
+
+// ── Step helpers ───────────────────────────────────────────────
+function setStep(id, state) {
+  const el  = document.getElementById(id);
+  if (!el) return;
+  el.className = `ps-step ${state}`;
+  const dot = el.querySelector(".pss-dot");
+  if (!dot) return;
+  if (state === "active") { dot.className = "pss-spin"; }
+  else if (state === "done") { dot.className = "pss-dot"; dot.style.background = "var(--green)"; }
+  else { dot.className = "pss-dot"; dot.style.background = ""; }
+}
+
+function setProgress(pct, count) {
+  document.getElementById("progressFill").style.width = pct + "%";
+  document.getElementById("psCount").textContent = `${count} / 100`;
+}
+
+// ── Main test runner ──────────────────────────────────────────
+async function runStressTest() {
+  const cid     = document.getElementById("modelCid").value.trim();
+  const profile = document.getElementById("profileSelect").value;
+
+  if (!cid) { alert("Please enter a Model CID"); return; }
+
+  const btn = document.getElementById("runBtn");
+  btn.disabled = true; btn.textContent = "⏳ RUNNING...";
+
+  document.getElementById("progressSection").classList.add("visible");
+  document.getElementById("resultsSection").classList.remove("visible");
+  ["step-gen","step-run","step-stats","step-verdict","step-proof"].forEach(s=>setStep(s,""));
+  setProgress(0, 0);
+
+  try {
+    // Step 1: generate
+    setStep("step-gen","active");
+    await sleep(400);
+    setProgress(20, 20);
+    setStep("step-gen","done");
+
+    // Step 2: run inference
+    setStep("step-run","active");
+
+    let customRanges = null;
+    if (profile === "custom") {
+      const n = document.querySelectorAll("[id^='cr-min-']").length;
+      customRanges = Array(n).fill(0).map((_,i) => ({
+        min: parseFloat(document.getElementById(`cr-min-${i}`)?.value || 0),
+        max: parseFloat(document.getElementById(`cr-max-${i}`)?.value || 1),
+        distribution: "uniform",
+      }));
+    }
+
+    // Simulate progress while fetching
+    const progressInterval = setInterval(() => {
+      const current = parseInt(document.getElementById("psCount").textContent.split(" / ")[0]);
+      if (current < 95) setProgress(20 + (current/100)*60, current + 5);
+    }, 300);
+
+    const res = await fetch("/api/stress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ modelCid: cid, profileId: profile, customRanges }),
+    });
+
+    clearInterval(progressInterval);
+    setProgress(80, 96);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    setStep("step-run","done");
+
+    // Step 3: stats
+    setStep("step-stats","active");
+    await sleep(300);
+    setProgress(88, 100);
+    setStep("step-stats","done");
+
+    // Step 4: verdict
+    setStep("step-verdict","active");
+    await sleep(400);
+    setStep("step-verdict","done");
+
+    // Step 5: proof
+    setStep("step-proof","active");
+    await sleep(300);
+    setProgress(100, 100);
+    setStep("step-proof","done");
+
+    lastResult = data;
+    renderResults(data);
+
+  } catch(err) {
+    console.error("Stress test failed:", err);
+    alert("Test failed: " + err.message + "\n\nMake sure the app is deployed on Vercel with the api/stress.js function.");
+  } finally {
+    btn.disabled = false; btn.textContent = "⚡ RUN STRESS TEST";
+  }
+}
+
+// ── Render results ─────────────────────────────────────────────
+function renderResults(data) {
+  const s = data.stats;
+
+  // Verdict
+  const verdictEl = document.getElementById("verdictText");
+  verdictEl.textContent = data.verdict || generateFallbackVerdict(data);
+  const hashEl = document.getElementById("verdictHash");
+  if (data.verdictTx) {
+    hashEl.textContent = data.verdictTx.slice(0,14)+"..."+data.verdictTx.slice(-8);
+    hashEl.href = `https://explorer.opengradient.ai/tx/${data.verdictTx}`;
+  } else {
+    hashEl.textContent = "No wallet configured — add OG_PRIVATE_KEY to Vercel";
+    hashEl.href = "#";
+  }
+
+  // Stats grid
+  document.getElementById("statCount").textContent = s.count;
+  const failEl = document.getElementById("statFailure");
+  failEl.textContent = s.failureRate + "%";
+  failEl.className = `sc-value ${s.failureRate < 1 ? "good" : s.failureRate < 5 ? "warn" : "bad"}`;
+
+  document.getElementById("statRange").textContent = `${s.min.toFixed(3)} – ${s.max.toFixed(3)}`;
+  document.getElementById("statRangeSub").textContent = `spread: ${(s.max-s.min).toFixed(3)}`;
+
+  const consEl = document.getElementById("statConsistency");
+  consEl.textContent = s.consistencyScore;
+  consEl.className = `sc-value ${s.consistencyScore >= 70 ? "good" : s.consistencyScore >= 40 ? "warn" : "bad"}`;
+
+  // Histogram
+  renderHistogram(s);
+
+  // Percentiles
+  document.getElementById("p5").textContent    = s.p5.toFixed(6);
+  document.getElementById("p25").textContent   = s.p25.toFixed(6);
+  document.getElementById("p50").textContent   = s.median.toFixed(6);
+  document.getElementById("p75").textContent   = s.p75.toFixed(6);
+  document.getElementById("p95").textContent   = s.p95.toFixed(6);
+  document.getElementById("pMean").textContent = s.mean.toFixed(6);
+  document.getElementById("pStd").textContent  = s.std.toFixed(6);
+  document.getElementById("distShape").textContent = s.distributionShape;
+
+  // Quality
+  const quality = s.consistencyScore >= 70 && s.failureRate < 1 ? "excellent"
+    : s.consistencyScore >= 50 && s.failureRate < 5 ? "good"
+    : s.consistencyScore >= 30 ? "fair" : "poor";
+  const qualLabels = { excellent:"✓ EXCELLENT", good:"● GOOD", fair:"⚠ FAIR", poor:"✗ POOR" };
+  document.getElementById("qualityBadge").innerHTML =
+    `<div class="quality-badge ${quality}">${qualLabels[quality]}</div>`;
+
+  document.getElementById("qEdge").textContent     = s.edgeCaseSensitivity.toFixed(4);
+  document.getElementById("qEdgeMean").textContent = s.edgeCaseMean.toFixed(4);
+  document.getElementById("qRandMean").textContent = s.randomMean.toFixed(4);
+  document.getElementById("qShape").textContent    = s.distributionShape;
+  document.getElementById("qStability").textContent= s.std < 0.1 ? "Very Stable" : s.std < 0.3 ? "Stable" : "Variable";
+
+  // Samples
+  const tbody = document.getElementById("samplesBody");
+  tbody.innerHTML = (data.samples || []).map((s,i) => {
+    const isEdge = s.isEdgeCase;
+    const inp3   = s.input.slice(0,3).map(v=>v.toFixed(3)).join(", ");
+    const outVal = s.output !== null ? s.output.toFixed(4) : "ERROR";
+    const outCls = s.output > 0.7 ? "high" : s.output > 0.3 ? "mid" : "low";
+    return `<tr class="${isEdge ? 'edge-case':''}" >
+      <td>${i+1}</td>
+      <td>${isEdge ? '<span class="edge-badge">EDGE</span>' : 'Random'}</td>
+      <td style="font-size:9px">[${inp3}${s.input.length>3?',...':''}]</td>
+      <td class="output-cell ${outCls}">${outVal}</td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("resultsSection").classList.add("visible");
+  document.getElementById("resultsSection").scrollIntoView({ behavior:"smooth" });
+}
+
+function renderHistogram(s) {
+  const hist    = s.histogram || [];
+  const maxVal  = Math.max(...hist, 1);
+  const histEl  = document.getElementById("histogram");
+
+  histEl.innerHTML = hist.map((count, i) => {
+    const h    = Math.max(4, (count / maxVal) * 100);
+    const from = (s.histogramMin + i * s.bucketSize).toFixed(2);
+    return `<div class="hist-bar-wrap" title="${count} samples around ${from}">
+      <div class="hist-bar" style="height:${h}%"></div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("histMin").textContent = s.histogramMin.toFixed(3);
+  document.getElementById("histMid").textContent = ((s.histogramMin + s.histogramMax) / 2).toFixed(3);
+  document.getElementById("histMax").textContent = s.histogramMax.toFixed(3);
+}
+
+function generateFallbackVerdict(data) {
+  const s = data.stats;
+  const quality = s.consistencyScore >= 70 ? "well-calibrated" : s.consistencyScore >= 40 ? "moderately calibrated" : "poorly calibrated";
+  const range   = (s.max - s.min) > 0.5 ? "wide output range indicating strong discriminative power" : "narrow output range suggesting limited sensitivity";
+  return `This ${data.profileName} model appears ${quality} with a ${range}. The ${s.distributionShape.toLowerCase()} distribution and ${s.failureRate}% failure rate suggest ${s.failureRate < 1 ? "production readiness" : "further tuning may be needed before deployment"}.`;
+}
+
+// ── Download report ────────────────────────────────────────────
+function downloadReport() {
+  if (!lastResult) return;
+  const s = lastResult.stats;
+  const lines = [
+    "OPENGRAIDENT MODEL STRESS TEST REPORT",
+    "======================================",
+    `Model CID:    ${lastResult.modelCid}`,
+    `Profile:      ${lastResult.profileName}`,
+    `Tested at:    ${lastResult.testedAt}`,
+    `Total inputs: ${lastResult.totalInputs}`,
+    "",
+    "VERDICT",
+    "-------",
+    lastResult.verdict || "(no verdict — configure OG_PRIVATE_KEY)",
+    lastResult.verdictTx ? `Proof TX: https://explorer.opengradient.ai/tx/${lastResult.verdictTx}` : "",
+    "",
+    "STATISTICS",
+    "----------",
+    `Count:              ${s.count}`,
+    `Failure Rate:       ${s.failureRate}%`,
+    `Min:                ${s.min}`,
+    `Max:                ${s.max}`,
+    `Mean:               ${s.mean}`,
+    `Median:             ${s.median}`,
+    `Std Deviation:      ${s.std}`,
+    `P5:                 ${s.p5}`,
+    `P25:                ${s.p25}`,
+    `P75:                ${s.p75}`,
+    `P95:                ${s.p95}`,
+    `Consistency Score:  ${s.consistencyScore}/100`,
+    `Distribution:       ${s.distributionShape}`,
+    `Edge Case Sensitivity: ${s.edgeCaseSensitivity}`,
+    "",
+    "SAMPLE INPUTS/OUTPUTS",
+    "---------------------",
+    ...(lastResult.samples || []).map((x,i) =>
+      `${i+1}. [${x.isEdgeCase?"EDGE":"RAND"}] Input: [${x.input.slice(0,3).join(", ")}...] → Output: ${x.output?.toFixed(6) ?? "ERROR"}`
+    ),
+    "",
+    "Generated by OG Stress Tester — https://docs.opengradient.ai",
+  ];
+
+  const blob = new Blob([lines.join("\n")], {type:"text/plain"});
+  const link = document.createElement("a");
+  link.href     = URL.createObjectURL(blob);
+  link.download = `og-stress-${lastResult.modelCid.slice(0,10)}.txt`;
+  link.click();
+}
+
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// ── Init ──────────────────────────────────────────────────────
+onProfileChange();
+</script>
+</body>
+</html>
