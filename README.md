@@ -123,4 +123,3 @@ Nino
 
 ---
 
-If you want a sharper version later (more technical or more “hype”), I can refine it further.
